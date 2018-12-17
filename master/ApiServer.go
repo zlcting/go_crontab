@@ -38,12 +38,12 @@ func handleJobSave(resp http.ResponseWriter, req *http.Request) {
 
 	postJob = req.PostFormValue("job")
 
-	//fmt.Println(postJob)
-
 	//3,反序列化job
 	if err = json.Unmarshal([]byte(postJob), &job); err != nil {
 		goto ERR
 	}
+	//fmt.Println(job)
+
 	//4.保存到etcd
 	if oldjob, err = G_jobMgr.SaveJob(&job); err != nil {
 
