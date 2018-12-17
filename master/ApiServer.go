@@ -43,12 +43,12 @@ func handleJobSave(resp http.ResponseWriter, req *http.Request) {
 		goto ERR
 	}
 	//fmt.Println(job)
-
 	//4.保存到etcd
 	if oldjob, err = G_jobMgr.SaveJob(&job); err != nil {
 
 		goto ERR
 	}
+
 	//5 返回应答
 	if bytes, err = common.BuildResponse(0, "success", oldjob); err == nil {
 		resp.Write(bytes)
