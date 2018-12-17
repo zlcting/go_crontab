@@ -4,6 +4,7 @@ import (
 	"flag"
 	"fmt"
 	"runtime"
+	"time"
 	"zlc_sys/master"
 )
 
@@ -41,6 +42,9 @@ func main() {
 
 	}
 
+	for {
+		time.Sleep(1 * time.Second)
+	}
 	return
 ERR:
 	fmt.Println(err)
