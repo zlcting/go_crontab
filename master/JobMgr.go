@@ -61,7 +61,7 @@ func (jobMgr *JobMgr) SaveJob(job *common.Job) (oldJob *common.Job, err error) {
 	)
 
 	// etcd的保存key
-	jobKey = "/cron/jobs/" + job.Name
+	jobKey = common.JOB_SAVE_DIR + job.Name
 	// 任务信息json
 	if jobValue, err = json.Marshal(job); err != nil {
 		return
@@ -84,4 +84,24 @@ func (jobMgr *JobMgr) SaveJob(job *common.Job) (oldJob *common.Job, err error) {
 		oldJob = &oldJobObj
 	}
 	return
+}
+
+func (JobMgr *JobMgr) DeleteJob(name string) (oldJob *common.Job, err error) {
+	var (
+		jobKey    string
+		delResp   *clientv3.DeleteResponse
+		oldJobObj common.Job
+	)
+	jobKey = common.JOB_SAVE_DIR + name
+	if delResp, err = JobMgr.kv.Delete(context.TODO(), jobKey, clientv3.WithPrevKV()); err != nil {
+		return
+	}
+	if len(delResp.PrevKvs) != 0 {
+		if err = json.Unmarshal(delResp.PrevKvs[0].Value, &oldJobObj); err != nil {
+			return
+		}
+		oldJob = &oldJobObj
+	}
+	return
+
 }

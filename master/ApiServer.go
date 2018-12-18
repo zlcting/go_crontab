@@ -62,6 +62,35 @@ ERR:
 	}
 }
 
+//任务删除
+// post /job/delete name = job1
+
+func handleJobDelete(resp http.ResponseWriter, req *http.Request) {
+	var err error
+	var name string
+	var oldjob *common.Job
+	var bytes []byte
+	// if err = req.ParseForm(); err != nil {
+	// 	goto ERR
+	// }
+	// name = req.PostForm.Get("name")
+	name = req.PostFormValue("name")
+
+	if oldjob, err = G_jobMgr.DeleteJob(name); err != nil {
+		goto ERR
+	}
+
+	if bytes, err = common.BuildResponse(0, "sussces", oldjob); err == nil {
+		resp.Write(bytes)
+	}
+	return
+ERR:
+	//异常应答
+	if bytes, err = common.BuildResponse(-1, err.Error(), nil); err == nil {
+		resp.Write(bytes)
+	}
+}
+
 //初始化服务
 func InitApiServer() (err error) {
 	var (
@@ -73,6 +102,7 @@ func InitApiServer() (err error) {
 	mux = http.NewServeMux()
 
 	mux.HandleFunc("/job/save", handleJobSave)
+	mux.HandleFunc("/job/delete", handleJobDelete)
 
 	if listener, err = net.Listen("tcp", ":"+strconv.Itoa(G_config.ApiPort)); err != nil {
 		return
