@@ -6,6 +6,8 @@ import (
 	"time"
 	"zlc_sys/common"
 
+	"go.etcd.io/etcd/mvcc/mvccpb"
+
 	"go.etcd.io/etcd/clientv3"
 )
 
@@ -104,4 +106,53 @@ func (JobMgr *JobMgr) DeleteJob(name string) (oldJob *common.Job, err error) {
 	}
 	return
 
+}
+
+//任务列表
+func (JobMgr *JobMgr) ListJobs() (jobList []*common.Job, err error) {
+	var (
+		dirKey  string
+		getResp *clientv3.GetResponse
+		kvPair  *mvccpb.KeyValue
+		job     *common.Job
+	)
+	//任务保存目录
+	dirKey = common.JOB_SAVE_DIR
+	if getResp, err = JobMgr.kv.Get(context.TODO(), dirKey, clientv3.WithPrefix()); err != nil {
+		return
+	}
+	jobList = make([]*common.Job, 0)
+	for _, kvPair = range getResp.Kvs {
+		job = &common.Job{}
+		if err = json.Unmarshal(kvPair.Value, job); err != nil {
+			err = nil
+			continue
+		}
+		// fmt.Println(job)
+		jobList = append(jobList, job)
+	}
+
+	return
+}
+
+func (JobMgr *JobMgr) KillJob(name string) (err error) {
+	var (
+		killerKey      string
+		leaseGrantResp *clientv3.LeaseGrantResponse
+		leaseId        clientv3.LeaseID
+	)
+	//通知woker杀死对应任务
+	killerKey = common.JOB_KILLER_DIR + name
+	//woker监听到一次put操作 创建一个租约让其自动过期
+	if leaseGrantResp, err = JobMgr.lease.Grant(context.TODO(), 1); err != nil {
+		return
+	}
+	//租约id
+	leaseId = leaseGrantResp.ID
+	//设置killer标记
+	if _, err = JobMgr.kv.Put(context.TODO(), killerKey, "", clientv3.WithLease(leaseId)); err != nil {
+		return
+	}
+
+	return
 }

@@ -91,6 +91,51 @@ ERR:
 	}
 }
 
+func handleJobList(resp http.ResponseWriter, req *http.Request) {
+	var jobList []*common.Job
+	var err error
+	var bytes []byte
+
+	if jobList, err = G_jobMgr.ListJobs(); err != nil {
+		goto ERR
+	}
+
+	if bytes, err = common.BuildResponse(0, "sussces", jobList); err == nil {
+		resp.Write(bytes)
+	}
+	return
+ERR:
+	//异常应答
+	if bytes, err = common.BuildResponse(-1, err.Error(), nil); err == nil {
+		resp.Write(bytes)
+	}
+}
+func handleJobKill(resp http.ResponseWriter, req *http.Request) {
+	var (
+		err   error
+		name  string
+		bytes []byte
+	)
+	// if err = req.ParseForm(); err != nil {
+	// 	goto ERR
+	// }
+
+	//name = req.PostForm.Get("name")
+	name = req.PostFormValue("name")
+	// fmt.Println(name)
+	G_jobMgr.KillJob(name)
+
+	if bytes, err = common.BuildResponse(0, "sussces", nil); err == nil {
+		resp.Write(bytes)
+	}
+	return
+	// ERR:
+	// 	//异常应答
+	// 	if bytes, err = common.BuildResponse(-1, err.Error(), nil); err == nil {
+	// 		resp.Write(bytes)
+	// 	}
+}
+
 //初始化服务
 func InitApiServer() (err error) {
 	var (
@@ -103,7 +148,8 @@ func InitApiServer() (err error) {
 
 	mux.HandleFunc("/job/save", handleJobSave)
 	mux.HandleFunc("/job/delete", handleJobDelete)
-
+	mux.HandleFunc("/job/list", handleJobList)
+	mux.HandleFunc("/job/kill", handleJobKill)
 	if listener, err = net.Listen("tcp", ":"+strconv.Itoa(G_config.ApiPort)); err != nil {
 		return
 	}
