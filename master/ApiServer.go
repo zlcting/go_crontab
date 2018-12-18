@@ -154,7 +154,7 @@ func InitApiServer() (err error) {
 	mux.HandleFunc("/job/kill", handleJobKill)
 
 	//静态文件目录
-	staticDir = http.Dir("./webroot")
+	staticDir = http.Dir(G_config.WebRoot)
 	staticHandler = http.FileServer(staticDir)
 	mux.Handle("/", http.StripPrefix("/", staticHandler)) //.webroot/index.html
 
