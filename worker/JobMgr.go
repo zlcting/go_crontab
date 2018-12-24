@@ -41,8 +41,12 @@ func (jobMgr *JobMgr) watchJobs() (err error) {
 	for _, kvpair = range getResp.Kvs {
 
 		if job, err = common.UnpackJob(kvpair.Value); err == nil {
+
 			jobEvent = common.BuildJobEvent(common.JOB_EVENT_SAVE, job)
 			//TODO 把任务同步给调度协程
+			//fmt.Println(jobEvent)
+			G_scheduler.PushJobEnvent(jobEvent)
+
 		}
 	}
 	//从该revision 向后监听变化事件
@@ -50,7 +54,7 @@ func (jobMgr *JobMgr) watchJobs() (err error) {
 		//从get时刻的后续版本监听
 		watchStartRevision = getResp.Header.Revision + 1
 		//启动监听 cron/josbs 目录的后续变化
-		watchChan = jobMgr.watcher.Watch(context.TODO(), common.JOB_SAVE_DIR, clientv3.WithRev(watchStartRevision))
+		watchChan = jobMgr.watcher.Watch(context.TODO(), common.JOB_SAVE_DIR, clientv3.WithRev(watchStartRevision), clientv3.WithPrefix())
 		for watchResp = range watchChan {
 			for _, watchEvent = range watchResp.Events {
 
@@ -70,6 +74,8 @@ func (jobMgr *JobMgr) watchJobs() (err error) {
 
 				}
 				//todo 推给scheduler
+				//fmt.Println(*jobEvent)
+				G_scheduler.PushJobEnvent(jobEvent)
 
 			}
 		}
@@ -96,7 +102,6 @@ func InitJobMgr() (err error) {
 	if client, err = clientv3.New(config); err != nil {
 		return
 	}
-	// fmt.Println(config)
 
 	//得到kv和lease的api
 	kv = clientv3.NewKV(client)
