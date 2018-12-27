@@ -10,6 +10,7 @@ import (
 	"go.etcd.io/etcd/clientv3"
 )
 
+// 任务管理器
 type JobMgr struct {
 	client  *clientv3.Client
 	kv      clientv3.KV
@@ -115,5 +116,13 @@ func InitJobMgr() (err error) {
 		watcher: watcher,
 	}
 	G_jobMgr.watchJobs()
+	return
+}
+
+//创建任务执行锁
+func (jobMgr *JobMgr) CreateJobLock(jobName string) (jobLock *JobLock) {
+	//返回一把锁
+
+	jobLock = InitJobLock(jobName, jobMgr.kv, jobMgr.lease)
 	return
 }
